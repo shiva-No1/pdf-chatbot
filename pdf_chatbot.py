@@ -59,7 +59,6 @@ def search_data_faiss(index, vector_store, texts, user_question):
     results = [texts[idx] for idx in I[0]]  # Assuming texts is a list containing the original text
     return results
 
-
 def creating_chain():
     Prompt_Template = """
     Answer the question as detailed as possible from the provided context. 
@@ -70,13 +69,19 @@ def creating_chain():
     Answer:
     """
     
-    # Modify the model initialization by specifying parameters explicitly
-    model = ChatOpenAI(model="gpt-4", temperature=0.5, openai_api_key=OPENAI_API_KEY)
+    model_kwargs = {
+        "model": "gpt-4", 
+        "temperature": 0.5, 
+        "openai_api_key": OPENAI_API_KEY
+    }
+
+    model = ChatOpenAI(**model_kwargs)
     
     prompt = PromptTemplate(template=Prompt_Template, input_variables=["context", "user_question"])
     
     # Return the chain with the corrected model initialization
     return load_qa_chain(model, chain_type="stuff", prompt=prompt)
+
 
 
 
