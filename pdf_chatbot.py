@@ -9,11 +9,12 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.schema import Document
 import time
 
+# Fetch OpenAI API key
 OPENAI_API_KEY = st.secrets["API_KEY"]
 if not OPENAI_API_KEY:
     st.error("OpenAI API key is not set. Please check your API key configuration.")
 
-
+# Extract text from PDF file
 def pdf_text_extract(pdf_doc):
     text_list = []
     try:
@@ -24,7 +25,7 @@ def pdf_text_extract(pdf_doc):
         st.error(f"Error reading PDF file: {e}")
     return text_list
 
-
+# Create FAISS index from text data
 def create_faiss_index(text_list):
     embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     vector_store = []  # Store vectors
@@ -44,7 +45,7 @@ def create_faiss_index(text_list):
 
     return index, vector_store, texts
 
-
+# Perform search using FAISS index
 def search_data_faiss(index, vector_store, texts, user_question):
     # Create embeddings instance
     embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
@@ -59,6 +60,7 @@ def search_data_faiss(index, vector_store, texts, user_question):
     results = [texts[idx] for idx in I[0]]  # Assuming texts is a list containing the original text
     return results
 
+# Create chain for question answering
 def creating_chain():
     Prompt_Template = """
     Answer the question as detailed as possible from the provided context. 
@@ -69,7 +71,7 @@ def creating_chain():
     Answer:
     """
     
-    # Pass the model directly as an argument, not through kwargs
+    # Initialize model directly, not via kwargs
     model = ChatOpenAI(model="gpt-4", temperature=0.5, openai_api_key=OPENAI_API_KEY)
     
     prompt = PromptTemplate(template=Prompt_Template, input_variables=["context", "user_question"])
@@ -77,10 +79,7 @@ def creating_chain():
     # Return the chain with the correct initialization
     return load_qa_chain(model, chain_type="stuff", prompt=prompt)
 
-
-
-
-
+# Function to ask question and get response from the chatbot
 def ask_question(index, vector_store, texts, user_question):
     docs = search_data_faiss(index, vector_store, texts, user_question)
     if not docs:
@@ -92,7 +91,7 @@ def ask_question(index, vector_store, texts, user_question):
         response = chain({"input_documents": converted_docs, "user_question": user_question}, return_only_outputs=True)
         return response["output_text"]
 
-
+# Main function to handle the Streamlit app logic
 def main():
     st.set_page_config("pdf chatbot")
     st.header("PDF Chatbot 📄")
@@ -116,15 +115,17 @@ def main():
     else:
         st.sidebar.info("Please upload a PDF file to begin.")
 
-    if "chat_history" not in st.session_state:       # creating chat history in session state
+    if "chat_history" not in st.session_state:  # creating chat history in session state
         st.session_state.chat_history = []
 
-    for i in st.session_state.chat_history:          # iterating to chat_histroy to display all the chat
+    # Display previous chat history
+    for i in st.session_state.chat_history:
         st.chat_message(i["role"]).write(i["content"])
 
+    # Get user input and process
     user_input = st.chat_input("Ask your question:")
     if user_input:
-        st.session_state.chat_history.append({"role": "user", "content": user_input})  # appending user message to the chat_history
+        st.session_state.chat_history.append({"role": "user", "content": user_input})  # appending user message to chat history
         st.chat_message("user").write(user_input)
 
         with st.spinner("Processing..."):
@@ -134,7 +135,8 @@ def main():
             else:
                 st.error("No relevant answer found in the uploaded documents.")
 
-        st.session_state.chat_history.append({"role": "assistant", "content": response})  # Appending bot response to the chat history 
+        st.session_state.chat_history.append({"role": "assistant", "content": response})  # Appending bot response to chat history 
         st.chat_message("assistant").write(response)
 
+# Run the main function to start the app
 main()
