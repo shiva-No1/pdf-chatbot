@@ -1,7 +1,5 @@
 import streamlit as st
 from PyPDF2 import PdfReader
-
-
 import faiss
 import numpy as np
 from langchain.embeddings import OpenAIEmbeddings
@@ -29,12 +27,14 @@ def pdf_text_extract(pdf_doc):
 
 def create_faiss_index(text_list):
     embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-    vector_store = []
+    vector_store = []  # Store vectors
+    texts = []  # Store original texts
 
     # Convert text to embeddings and prepare for FAISS
     for text in text_list:
         vector = embeddings.embed_query(text)
         vector_store.append(vector)
+        texts.append(text)
     
     vector_store = np.array(vector_store).astype(np.float32)
 
@@ -42,11 +42,10 @@ def create_faiss_index(text_list):
     index = faiss.IndexFlatL2(vector_store.shape[1])
     index.add(vector_store)
 
-    return index, vector_store
+    return index, vector_store, texts
 
 
-
-def search_data_faiss(index, vector_store, user_question):
+def search_data_faiss(index, vector_store, texts, user_question):
     # Create embeddings instance
     embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
     
@@ -57,9 +56,8 @@ def search_data_faiss(index, vector_store, user_question):
     D, I = index.search(np.array([query_vector]).astype(np.float32), k=10)  # Search for top 10 matches
     
     # Retrieve the text corresponding to the indices
-    results = [vector_store.texts[idx] for idx in I[0]]  # Assuming vector_store contains the texts
+    results = [texts[idx] for idx in I[0]]  # Assuming texts is a list containing the original text
     return results
-
 
 
 def creating_chain():
@@ -76,8 +74,8 @@ def creating_chain():
     return load_qa_chain(model, chain_type="stuff", prompt=prompt)
 
 
-def ask_question(index, vector_store, user_question):
-    docs = search_data_faiss(index, vector_store, user_question)
+def ask_question(index, vector_store, texts, user_question):
+    docs = search_data_faiss(index, vector_store, texts, user_question)
     if not docs:
         st.error("No relevant documents found.")
         return None
@@ -99,8 +97,8 @@ def main():
         if not text_list:
             st.error("No text extracted from the uploaded PDF.")
         else:
-            # Create FAISS index and store vectors
-            index, vector_store = create_faiss_index(text_list)
+            # Create FAISS index and store vectors and texts
+            index, vector_store, texts = create_faiss_index(text_list)
 
             if st.sidebar.button("Upload to FAISS"):
                 with st.sidebar:
@@ -123,7 +121,7 @@ def main():
         st.chat_message("user").write(user_input)
 
         with st.spinner("Processing..."):
-            result = ask_question(index, vector_store, user_input)
+            result = ask_question(index, vector_store, texts, user_input)
             if result is not None:
                 response = result
             else:
