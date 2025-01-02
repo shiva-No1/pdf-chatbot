@@ -1,6 +1,6 @@
 import streamlit as st
 from PyPDF2 import PdfReader
-from secret_file import API_KEY
+
 
 import faiss
 import numpy as np
@@ -11,7 +11,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.schema import Document
 import time
 
-OPENAI_API_KEY = API_KEY
+OPENAI_API_KEY = st.secrets("API_KEY")
 if not OPENAI_API_KEY:
     st.error("OpenAI API key is not set. Please check your API key configuration.")
 
