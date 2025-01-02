@@ -69,9 +69,15 @@ def creating_chain():
 
     Answer:
     """
+    
+    # Modify the model initialization by specifying parameters explicitly
     model = ChatOpenAI(model="gpt-4", temperature=0.5, openai_api_key=OPENAI_API_KEY)
+    
     prompt = PromptTemplate(template=Prompt_Template, input_variables=["context", "user_question"])
+    
+    # Return the chain with the corrected model initialization
     return load_qa_chain(model, chain_type="stuff", prompt=prompt)
+
 
 
 def ask_question(index, vector_store, texts, user_question):
