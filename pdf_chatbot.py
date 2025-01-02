@@ -98,9 +98,6 @@ def main():
     
     # File uploader for PDF
     pdf_doc = st.sidebar.file_uploader("Choose a PDF file", type="pdf")
-    
-    # Initialize ChromaDB collection
-    collection = openai_embedding()
 
     if pdf_doc is not None:
         # Extract text from the uploaded PDF
@@ -108,13 +105,8 @@ def main():
         if not text_list:
             st.error("No text extracted from the uploaded PDF.")
         else:
-            # Option to upload data to ChromaDB
-            if st.sidebar.button("Upload to ChromaDB"):
-                with st.sidebar:
-                    with st.spinner("Uploading to ChromaDB..."):
-                        time.sleep(3)
-                        add_data_to_chromadb(collection, text_list)
-                        st.sidebar.success("Documents successfully added to ChromaDB.")
+            # Create FAISS index from the extracted text
+            index, vector_store, texts = create_faiss_index(text_list)
     else:
         st.sidebar.info("Please upload a PDF file to begin.")
 
@@ -138,7 +130,7 @@ def main():
 
         # Process the user question with a spinner for feedback
         with st.spinner("Processing..."):
-            result = ask_question(collection, user_input)  # Get the response
+            result = ask_question(index, vector_store, texts, user_input)  # Get the response
             if result is not None:
                 response = result
             else:
@@ -150,4 +142,3 @@ def main():
 
 # Run the main function to start the app
 main()
-
