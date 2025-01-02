@@ -44,16 +44,17 @@ def create_faiss_index(text_list):
 
     return index, vector_store
 
-
 def search_data_faiss(index, vector_store, user_question):
-    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-    query_vector = embeddings.embed_query(user_question)
-
-    # Perform the search using FAISS
-    D, I = index.search(np.array([query_vector]).astype(np.float32), k=10)
-    results = [text for idx in I[0]]
+    # Convert the user question to an embedding vector
+    query_vector = vector_store.embed(user_question)  # Assuming you have a method to convert the question to a vector
     
+    # Perform the search using FAISS
+    D, I = index.search(np.array([query_vector]).astype(np.float32), k=10)  # search for top 10 matches
+    
+    # Assuming vector_store contains the original documents in an attribute `texts`:
+    results = [vector_store.texts[idx] for idx in I[0]]  # Retrieve the text corresponding to the indices
     return results
+
 
 
 def creating_chain():
