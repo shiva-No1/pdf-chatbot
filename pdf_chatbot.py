@@ -91,7 +91,6 @@ def ask_question(index, vector_store, texts, user_question):
         response = chain({"input_documents": converted_docs, "user_question": user_question}, return_only_outputs=True)
         return response["output_text"]
 
-# Main function to handle the Streamlit app logic
 def main():
     st.set_page_config("pdf chatbot")
     st.header("PDF Chatbot 📄")
@@ -115,17 +114,16 @@ def main():
     else:
         st.sidebar.info("Please upload a PDF file to begin.")
 
-    if "chat_history" not in st.session_state:  # creating chat history in session state
+    if "chat_history" not in st.session_state:       # creating chat history in session state
         st.session_state.chat_history = []
 
-    # Display previous chat history
-    for i in st.session_state.chat_history:
+    for i in st.session_state.chat_history:          # iterating to chat_histroy to display all the chat
         st.chat_message(i["role"]).write(i["content"])
 
-    # Get user input and process
-    user_input = st.chat_input("Ask your question:")
+    # Replaced chat_input with text_input or text_area
+    user_input = st.text_input("Ask your question:")  # Use text_input or text_area instead
     if user_input:
-        st.session_state.chat_history.append({"role": "user", "content": user_input})  # appending user message to chat history
+        st.session_state.chat_history.append({"role": "user", "content": user_input})  # appending user message to the chat_history
         st.chat_message("user").write(user_input)
 
         with st.spinner("Processing..."):
@@ -135,8 +133,7 @@ def main():
             else:
                 st.error("No relevant answer found in the uploaded documents.")
 
-        st.session_state.chat_history.append({"role": "assistant", "content": response})  # Appending bot response to chat history 
+        st.session_state.chat_history.append({"role": "assistant", "content": response})  # Appending bot response to the chat history 
         st.chat_message("assistant").write(response)
 
-# Run the main function to start the app
 main()
