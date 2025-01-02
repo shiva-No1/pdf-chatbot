@@ -1,6 +1,6 @@
 streamlit==1.27.2
 PyPDF2==2.11.2
-faiss-cpu==1.7.2 xz
+faiss-gpu==1.7.2
 openai==0.27.0
 langchain==0.0.164
 numpy==1.24.2
