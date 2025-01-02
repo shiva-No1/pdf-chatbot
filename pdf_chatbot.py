@@ -69,18 +69,14 @@ def creating_chain():
     Answer:
     """
     
-    model_kwargs = {
-        "model": "gpt-4", 
-        "temperature": 0.5, 
-        "openai_api_key": OPENAI_API_KEY
-    }
-
-    model = ChatOpenAI(**model_kwargs)
+    # Pass the model directly as an argument, not through kwargs
+    model = ChatOpenAI(model="gpt-4", temperature=0.5, openai_api_key=OPENAI_API_KEY)
     
     prompt = PromptTemplate(template=Prompt_Template, input_variables=["context", "user_question"])
     
-    # Return the chain with the corrected model initialization
+    # Return the chain with the correct initialization
     return load_qa_chain(model, chain_type="stuff", prompt=prompt)
+
 
 
 
