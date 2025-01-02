@@ -92,48 +92,62 @@ def ask_question(index, vector_store, texts, user_question):
         return response["output_text"]
 
 def main():
-    st.set_page_config("pdf chatbot")
+    st.set_page_config("PDF Chatbot", page_icon="📄", layout="wide")
     st.header("PDF Chatbot 📄")
-    st.sidebar.header("Upload your Pdf: ")
-    pdf_doc = st.sidebar.file_uploader("", type="pdf")
+    st.sidebar.header("Upload your PDF: ")
     
+    # File uploader for PDF
+    pdf_doc = st.sidebar.file_uploader("Choose a PDF file", type="pdf")
+    
+    # Initialize ChromaDB collection
+    collection = openai_embedding()
+
     if pdf_doc is not None:
+        # Extract text from the uploaded PDF
         text_list = pdf_text_extract(pdf_doc)
         if not text_list:
             st.error("No text extracted from the uploaded PDF.")
         else:
-            # Create FAISS index and store vectors and texts
-            index, vector_store, texts = create_faiss_index(text_list)
-
-            if st.sidebar.button("Upload to FAISS"):
+            # Option to upload data to ChromaDB
+            if st.sidebar.button("Upload to ChromaDB"):
                 with st.sidebar:
-                    with st.spinner("Uploading"):
+                    with st.spinner("Uploading to ChromaDB..."):
                         time.sleep(3)
-                        st.sidebar.success("Documents successfully added to FAISS.")
-
+                        add_data_to_chromadb(collection, text_list)
+                        st.sidebar.success("Documents successfully added to ChromaDB.")
     else:
         st.sidebar.info("Please upload a PDF file to begin.")
 
-    if "chat_history" not in st.session_state:       # creating chat history in session state
+    # Check if chat history exists, if not, initialize it
+    if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    for i in st.session_state.chat_history:          # iterating to chat_histroy to display all the chat
-        st.chat_message(i["role"]).write(i["content"])
+    # Display chat history in an interactive chat window
+    for message in st.session_state.chat_history:
+        if message["role"] == "user":
+            st.chat_message("user").markdown(message["content"], unsafe_allow_html=True)
+        else:
+            st.chat_message("assistant").markdown(message["content"], unsafe_allow_html=True)
 
-    # Replaced chat_input with text_input or text_area
-    user_input = st.text_input("Ask your question:")  # Use text_input or text_area instead
+    # Get user input and process it
+    user_input = st.chat_input("Ask your question:")
     if user_input:
-        st.session_state.chat_history.append({"role": "user", "content": user_input})  # appending user message to the chat_history
-        st.chat_message("user").write(user_input)
+        # Append user input to chat history
+        st.session_state.chat_history.append({"role": "user", "content": user_input})
+        st.chat_message("user").markdown(user_input, unsafe_allow_html=True)
 
+        # Process the user question with a spinner for feedback
         with st.spinner("Processing..."):
-            result = ask_question(index, vector_store, texts, user_input)
+            result = ask_question(collection, user_input)  # Get the response
             if result is not None:
                 response = result
             else:
-                st.error("No relevant answer found in the uploaded documents.")
+                response = "Sorry, I couldn't find any relevant information."
 
-        st.session_state.chat_history.append({"role": "assistant", "content": response})  # Appending bot response to the chat history 
-        st.chat_message("assistant").write(response)
+        # Append the assistant's response to chat history
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
+        st.chat_message("assistant").markdown(response, unsafe_allow_html=True)
 
+# Run the main function to start the app
 main()
+
